@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LinuxCP.Application\LinuxCP.Application.csproj" />
     <ProjectReference Include="..\linuxcp.client\linuxcp.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
