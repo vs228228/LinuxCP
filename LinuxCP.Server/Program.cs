@@ -1,3 +1,5 @@
+using LinuxCP.Infrastructure.Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
 namespace LinuxCP.Server
 {
     public class Program
@@ -12,6 +14,11 @@ namespace LinuxCP.Server
             // Добавляем Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+
+            // Добавляем DbContext (пример)
+            builder.Services.AddDbContext<PostgresDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
             var app = builder.Build();
 
