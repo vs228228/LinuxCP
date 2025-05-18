@@ -1,4 +1,7 @@
+using LinuxCP.Infrastructure.Persistence.Contexts;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace LinuxCP.Server.Controllers
 {
@@ -6,10 +9,21 @@ namespace LinuxCP.Server.Controllers
     [Route("api/[controller]")]
     public class ExampleController : ControllerBase
     {
-        [HttpGet]
-        public IActionResult Get()
+        private readonly PostgresDbContext _postgresDbContext;
+
+        public ExampleController(PostgresDbContext postgresDbContext)
         {
-            return Ok("API is working");
+            _postgresDbContext = postgresDbContext;
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllUsersAsync()
+        {
+            var users = await _postgresDbContext.Users.ToListAsync();
+            return Ok(users);
+        }
+
+
+
     }
 }

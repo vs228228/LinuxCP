@@ -1,5 +1,9 @@
+using LinuxCP.Application.Interfaces;
 using LinuxCP.Infrastructure.Persistence.Contexts;
+using LinuxCP.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
+using Serilog;
 namespace LinuxCP.Server
 {
     public class Program
@@ -11,18 +15,42 @@ namespace LinuxCP.Server
             // Add services to the container.
             builder.Services.AddControllers();
 
-            // Добавляем Swagger
+            // Add Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
 
-            // Добавляем DbContext (пример)
+            builder.Services.AddHttpClient<IOllamaService, OllamaService>();
+
+
+            // Получаем строку подключения
+            var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDb");
+
+            // Создаём клиента
+            var client = new MongoClient(mongoConnectionString);
+            var database = client.GetDatabase("logs_db");
+
+            // Настройка Serilog
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.MongoDB(database, collectionName: "logs") // используем IMongoDatabase
+                .Enrich.FromLogContext()
+                .CreateLogger();
+
+            // Подключаем Serilog к хосту
+            builder.Host.UseSerilog();
+
+
+
+
+
+            // Add DbContext
             builder.Services.AddDbContext<PostgresDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
             var app = builder.Build();
 
-            // Подключаем Swagger только в режиме разработки
+            // Enabling Swagger only in development mode
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
