@@ -3,6 +3,7 @@ using System;
 using LinuxCP.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LinuxCP.Infrastructure.Migrations
 {
     [DbContext(typeof(PostgresDbContext))]
-    partial class PostgresDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250519120802_AddMessage")]
+    partial class AddMessage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,7 +51,7 @@ namespace LinuxCP.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("СhatMessages");
+                    b.ToTable("chatMessages");
                 });
 
             modelBuilder.Entity("LinuxCP.Domain.Entities.User", b =>

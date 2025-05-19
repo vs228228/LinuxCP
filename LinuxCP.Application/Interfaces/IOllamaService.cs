@@ -8,6 +8,6 @@ namespace LinuxCP.Application.Interfaces
 {
     public interface IOllamaService
     {
-        Task<string> GetResponseAsync(string prompt);
+        Task<string> GetResponseAsync(string prompt, int userId);
     }
 }

@@ -7,22 +7,14 @@ namespace LinuxCP.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ExampleController : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly PostgresDbContext _postgresDbContext;
 
-        public ExampleController(PostgresDbContext postgresDbContext)
+        public UserController(PostgresDbContext postgresDbContext)
         {
             _postgresDbContext = postgresDbContext;
         }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAllUsersAsync()
-        {
-            var users = await _postgresDbContext.Users.ToListAsync();
-            return Ok(users);
-        }
-
 
 
     }
