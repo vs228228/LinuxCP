@@ -13,6 +13,10 @@ namespace LinuxCP.Infrastructure.Persistence.Contexts
         public PostgresDbContext(DbContextOptions<PostgresDbContext> options): base(options)
         {
         }
+
         public DbSet<User> Users { get; set; }
+
+        public DbSet<ChatMessage> СhatMessages { get; set; }
+
     }
 }
