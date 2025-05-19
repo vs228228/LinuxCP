@@ -1,6 +1,8 @@
 ﻿using LinuxCP.Application.Interfaces;
 using LinuxCP.Domain.Entities;
+using LinuxCP.Infrastructure.Persistence.Contexts;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LinuxCP.Server.Controllers
 {
@@ -9,16 +11,25 @@ namespace LinuxCP.Server.Controllers
     public class ChatController : Controller
     {
         private readonly IOllamaService _ollamaService;
+        private readonly PostgresDbContext _postgresDbContext;
 
-        public ChatController(IOllamaService ollamaService)
+
+
+        public ChatController(IOllamaService ollamaService, PostgresDbContext postgresDbContext)
         {
             _ollamaService = ollamaService;
+            _postgresDbContext = postgresDbContext;
         }
 
         [HttpGet("Messages/{userId}")]
-        public Task <IActionResult> GetAllMessageByUserAsync(int userId)
+        public async Task <IActionResult> GetAllMessageByUserAsync(int userId)
         {
-            return Task.FromResult<IActionResult>(NotFound("Пользователь не найден или метод не реализован"));
+            var messages = await _postgresDbContext.СhatMessages
+                .Where(m => m.UserId == userId)
+                .OrderBy(m => m.Timestamp)
+                .ToListAsync();
+
+            return Ok(messages);
         }
 
         [HttpPost("Send")]
