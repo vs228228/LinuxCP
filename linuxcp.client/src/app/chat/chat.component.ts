@@ -34,8 +34,32 @@ export class ChatComponent implements AfterViewChecked {
     }
   }
 
+  decodeUnicodeString(input: string): string {
+    // Сначала заменим суррогатные пары (например, \uD83D\uDE0A — смайлики)
+    const surrogateDecoded = input.replace(
+      /\\uD[89AB][0-9A-F]{2}\\uD[CDEF][0-9A-F]{2}/gi,
+      (match: string): string => {
+        const high = parseInt(match.substr(2, 4), 16);
+        const low = parseInt(match.substr(8, 4), 16);
+        const codePoint = (high - 0xd800) * 0x400 + (low - 0xdc00) + 0x10000;
+        return String.fromCodePoint(codePoint);
+      }
+    );
+
+    // Затем заменим обычные \uXXXX
+    const fullyDecoded = surrogateDecoded.replace(
+      /\\u([0-9A-F]{4})/gi,
+      (_: string, hex: string): string => {
+        return String.fromCharCode(parseInt(hex, 16));
+      }
+    );
+
+    return fullyDecoded;
+  }
+
   cleanMessage(text: string): string {
-    return text
+    const newtext = this.decodeUnicodeString(text)
+    return newtext
       .replace(/<[^>]*>/g, '')
       .replace(/\\n/g, '\n')
       .replace(/\n{2,}/g, '\n\n')
