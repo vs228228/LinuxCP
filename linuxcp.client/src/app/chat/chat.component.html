@@ -3,14 +3,14 @@
     <h2>Чат с помощником</h2>
   </div>
 
-  <div class="chat-messages">
+  <div class="chat-messages" #messagesContainer>
     <div *ngFor="let msg of messages" [ngClass]="['message', msg.sender]">
       <div class="message-content">
         <div class="message-sender">
           <strong>{{ msg.sender === 'user' ? 'Вы' : 'Ассистент' }}</strong>
         </div>
-        <div class="message-text">{{ msg.text }}</div>
-        <div class="message-time">{{ getCurrentTime() }}</div>
+        <div class="message-text">{{ cleanMessage(msg.text) }}</div>
+        <div class="message-time">{{ msg.timestamp | date:'HH:mm' }}</div>
       </div>
     </div>
   </div>
@@ -21,7 +21,7 @@
              (keydown.enter)="send()"
              placeholder="Напишите сообщение..."
              class="message-input" />
-      <button (click)="send()" class="send-button">
+      <button (click)="send()" class="send-button" [disabled]="!message.trim()">
         <svg viewBox="0 0 24 24" width="24" height="24">
           <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
         </svg>

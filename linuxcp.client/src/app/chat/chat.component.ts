@@ -1,48 +1,87 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { ChatService } from '../chat.service';
 
 interface ChatMessage {
   sender: 'user' | 'bot';
   text: string;
+  timestamp: Date;
 }
 
 @Component({
   selector: 'app-chat',
-  templateUrl: './chat.component.html'
+  templateUrl: './chat.component.html',
+  styleUrls: ['./chat.component.css']
 })
-export class ChatComponent {
-  userId: number = 1; // можно задать из логики или хранить в localStorage
+export class ChatComponent implements AfterViewChecked {
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+
+  userId: number = 1;
   message: string = '';
   messages: ChatMessage[] = [];
+  isLoading: boolean = false;
 
   constructor(private chatService: ChatService) { }
 
-  getCurrentTime(): string {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    try {
+      this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
+    } catch (err) {
+      console.error('Scroll error:', err);
+    }
+  }
+
+  cleanMessage(text: string): string {
+    return text
+      .replace(/<[^>]*>/g, '')
+      .replace(/\\n/g, '\n')
+      .replace(/\n{2,}/g, '\n\n')
+      .replace(/\\"/g, '"')
+      .replace(/^[\s\n]+|[\s\n]+$/g, '');
   }
 
   send() {
-    if (!this.message.trim()) return;
+    if (!this.message.trim() || this.isLoading) return;
 
-    const userMessage: ChatMessage = { sender: 'user', text: this.message };
+    // Добавляем сообщение пользователя
+    const userMessage: ChatMessage = {
+      sender: 'user',
+      text: this.message,
+      timestamp: new Date()
+    };
     this.messages.push(userMessage);
+    this.isLoading = true;
+    const currentMessage = this.message;
+    this.message = '';
 
-    this.chatService.sendMessage(this.userId, this.message).subscribe({
+    // Отправляем сообщение на сервер
+    this.chatService.sendMessage(this.userId, currentMessage).subscribe({
       next: (response: string) => {
-        // Обрезаем первые 13 символов и последний 1 символ
         let cleanedResponse = response;
         if (response.startsWith('{"response":"') && response.endsWith('"}')) {
           cleanedResponse = response.slice(13, -2);
         }
-        const botMessage: ChatMessage = { sender: 'bot', text: cleanedResponse };
+
+        const botMessage: ChatMessage = {
+          sender: 'bot',
+          text: this.cleanMessage(cleanedResponse),
+          timestamp: new Date()
+        };
         this.messages.push(botMessage);
+        this.isLoading = false;
       },
       error: (err) => {
-        this.messages.push({ sender: 'bot', text: 'Ошибка отправки запроса.' });
-        console.error(err);
+        this.messages.push({
+          sender: 'bot',
+          text: 'Произошла ошибка при обработке запроса. Пожалуйста, попробуйте позже.',
+          timestamp: new Date()
+        });
+        console.error('Chat error:', err);
+        this.isLoading = false;
       }
     });
-
-    this.message = '';
   }
 }
