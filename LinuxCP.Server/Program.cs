@@ -1,9 +1,10 @@
-using LinuxCP.Application.Interfaces;
+п»їusing LinuxCP.Application.Interfaces;
 using LinuxCP.Infrastructure.Persistence.Contexts;
 using LinuxCP.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using Serilog;
+
 namespace LinuxCP.Server
 {
     public class Program
@@ -19,38 +20,48 @@ namespace LinuxCP.Server
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-
             builder.Services.AddHttpClient<IOllamaService, OllamaService>();
 
-
-            // Получаем строку подключения
+            // РџРѕР»СѓС‡Р°РµРј СЃС‚СЂРѕРєСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє MongoDB
             var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDb");
-
-            // Создаём клиента
             var client = new MongoClient(mongoConnectionString);
             var database = client.GetDatabase("logs_db");
 
-            // Настройка Serilog
+            // РќР°СЃС‚СЂРѕР№РєР° Serilog
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.MongoDB(database, collectionName: "logs") // используем IMongoDatabase
+                .WriteTo.MongoDB(database, collectionName: "logs")
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
-            // Подключаем Serilog к хосту
             builder.Host.UseSerilog();
-
-
-
-
 
             // Add DbContext
             builder.Services.AddDbContext<PostgresDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowLocalAndAngular", policy =>
+                {
+                    policy.WithOrigins(
+                        "https://localhost:7053",  // С‚РІРѕР№ backend origin, РµСЃР»Рё С„СЂРѕРЅС‚РµРЅРґ Рё Р±СЌРєРµРЅРґ РЅР° РѕРґРЅРѕРј РїРѕСЂС‚Рµ
+                        "http://localhost:7053",   // РµСЃР»Рё С„СЂРѕРЅС‚РµРЅРґ Р±РµР· https (СЂРµРґРєРѕ, РЅРѕ РЅР° РІСЃСЏРєРёР№)
+                        "https://127.0.0.1:4200", // Angular dev server СЃ https
+                        "http://127.0.0.1:4200",  // Angular dev server СЃ http
+                        "http://localhost:4200",  // Angular dev server СЃ http + localhost
+                        "https://localhost:4200"  // Angular dev server СЃ https + localhost
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+                });
+            });
+
+
             var app = builder.Build();
 
-            // Enabling Swagger only in development mode
+            // Enable Swagger РІ dev-СЃСЂРµРґРµ
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -60,7 +71,8 @@ namespace LinuxCP.Server
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
-            // Configure the HTTP request pipeline.
+            app.UseCors("AllowLocalAndAngular");
+
             app.UseHttpsRedirection();
             app.UseAuthorization();
 
