@@ -1,5 +1,6 @@
 ﻿using LinuxCP.Application.Interfaces;
 using LinuxCP.Infrastructure.Persistence.Contexts;
+using LinuxCP.Infrastructure.Persistence.Repositories;
 using LinuxCP.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
@@ -21,6 +22,8 @@ namespace LinuxCP.Server
             builder.Services.AddSwaggerGen();
 
             builder.Services.AddHttpClient<IOllamaService, OllamaService>();
+            builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<IChatRepository, ChatRepository>();
 
             // Получаем строку подключения к MongoDB
             var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDb");

@@ -1,12 +1,11 @@
 ﻿using LinuxCP.Application.Interfaces;
+using LinuxCP.Domain.Entities;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using LinuxCP.Infrastructure.Persistence.Contexts;
-using LinuxCP.Domain.Entities;  // не забудь using
 
 namespace LinuxCP.Infrastructure.Services
 {
@@ -14,13 +13,13 @@ namespace LinuxCP.Infrastructure.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _ollamaUrl;
-        private readonly PostgresDbContext _postgresDbContext;
+        private readonly IChatRepository _chatRepository;
 
-        public OllamaService(HttpClient httpClient, IConfiguration configuration, PostgresDbContext postgresDbContext)
+        public OllamaService(HttpClient httpClient, IConfiguration configuration, IChatRepository chatRepository)
         {
             _httpClient = httpClient;
             _ollamaUrl = configuration["OllamaApiUrl"];
-            _postgresDbContext = postgresDbContext;
+            _chatRepository = chatRepository;
         }
 
         public async Task<string> GetResponseAsync(string prompt, int userId)
@@ -46,7 +45,6 @@ namespace LinuxCP.Infrastructure.Services
             using var doc = JsonDocument.Parse(responseBody);
             var botResponse = doc.RootElement.GetProperty("response").GetString();
 
-            // Создаем сущности сообщений
             var userMessage = new ChatMessage
             {
                 UserId = userId,
@@ -63,13 +61,9 @@ namespace LinuxCP.Infrastructure.Services
                 Timestamp = DateTime.UtcNow
             };
 
-            // Добавляем сообщения в контекст и сохраняем
-            _postgresDbContext.СhatMessages.Add(userMessage);
-            _postgresDbContext.СhatMessages.Add(botMessage);
-            await _postgresDbContext.SaveChangesAsync();
+            await _chatRepository.SaveChatMessagesAsync(userMessage, botMessage);
 
             return botResponse;
         }
-
     }
 }

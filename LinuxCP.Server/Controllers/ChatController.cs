@@ -1,8 +1,6 @@
 ﻿using LinuxCP.Application.Interfaces;
 using LinuxCP.Domain.Entities;
-using LinuxCP.Infrastructure.Persistence.Contexts;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LinuxCP.Server.Controllers
 {
@@ -10,41 +8,32 @@ namespace LinuxCP.Server.Controllers
     [Route("api/chat")]
     public class ChatController : Controller
     {
-        private readonly IOllamaService _ollamaService;
-        private readonly PostgresDbContext _postgresDbContext;
+        private readonly IChatService _chatService;
 
-
-
-        public ChatController(IOllamaService ollamaService, PostgresDbContext postgresDbContext)
+        public ChatController(IChatService chatService)
         {
-            _ollamaService = ollamaService;
-            _postgresDbContext = postgresDbContext;
+            _chatService = chatService;
         }
 
         [HttpGet("Messages/{userId}")]
-        public async Task <IActionResult> GetAllMessageByUserAsync(int userId)
+        public async Task<IActionResult> GetAllMessageByUserAsync(int userId)
         {
-            var messages = await _postgresDbContext.СhatMessages
-                .Where(m => m.UserId == userId)
-                .OrderBy(m => m.Timestamp)
-                .ToListAsync();
-
+            var messages = await _chatService.GetAllMessagesByUserAsync(userId);
             return Ok(messages);
         }
 
         [HttpPost("Send")]
-        public async Task<IActionResult> SendMessageAsync([FromBody] OllamaRequest request, int UserId)
+        public async Task<IActionResult> SendMessageAsync([FromBody] OllamaRequest request, [FromQuery] int userId)
         {
-            var response = await _ollamaService.GetResponseAsync(request.Prompt, UserId);
+            var response = await _chatService.SendMessageAsync(request.Prompt, userId);
             return Ok(new { response });
         }
 
         [HttpDelete("Clear/{userId}")]
         public async Task<IActionResult> ClearHistoryUserAsync(int userId)
         {
+            await _chatService.ClearHistoryAsync(userId);
             return Ok($"История сообщений пользователя {userId} успешно очищена.");
         }
-
-
     }
 }
